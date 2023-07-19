@@ -152,7 +152,7 @@ def divergence_numba_parallel(c, max_iter=100):
         mask[diverged] = False  # Update mask
     return divergence
 
-def process_chunk(chunk, max_iter=100):
+def process_chunk(chunk):
     return divergence_numpy(chunk, max_iter)
 
 def divergence_multiprocessing(c, max_iter=100):
@@ -178,7 +178,7 @@ def divergence_multiprocessing(c, max_iter=100):
     array([[-1,  3],
            [ 1,  1]])
     """
-    chunks = [(chunk, max_iter) for chunk in np.array_split(c, cpu_count())]
+    chunks = np.array_split(c, cpu_count())  # Split array into chunks
     with Pool() as pool:
         results = pool.map(process_chunk, chunks)
     return np.concatenate(results)
