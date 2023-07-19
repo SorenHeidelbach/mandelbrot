@@ -26,15 +26,15 @@ def mandelbrot_naive(c, max_iterations=100, divergence_limit=2):
     --------
     >>> divergence_rate = mandelbrot_naive(complex(0.5, 0.5), max_iterations=1000, divergence_limit=2.0)
     >>> print(divergence_rate)
-    0.005
+    0.995
     """
 
     z =  0
     for i in range(max_iterations):
         z = z ** 2 + c
         if abs(z) > divergence_limit:
-            return (i + 1)/max_iterations
-    return 1
+            return 1 - (i + 1)/max_iterations
+    return 0
 
 
 @jit(nopython=True)
@@ -62,7 +62,7 @@ def mandelbrot_numba(c, max_iterations=100, divergence_limit=2):
     --------
     >>> divergence_rate = mandelbrot_numba(complex(0.5, 0.5), max_iterations=1000, divergence_limit=2.0)
     >>> print(divergence_rate)
-    0.005
+    0.995
     """
 
 
@@ -70,8 +70,8 @@ def mandelbrot_numba(c, max_iterations=100, divergence_limit=2):
     for i in range(max_iterations):
         z = z ** 2 + c
         if abs(z) > divergence_limit:
-            return (i + 1)/max_iterations
-    return 1
+            return 1 - (i + 1)/max_iterations
+    return 0
 
 
 def mandelbrot_set_naive(c):
@@ -94,8 +94,8 @@ def mandelbrot_set_naive(c):
     --------
     >>> divergence_rate = mandelbrot_set_naive(np.array([[complex(0.5, 0.5), complex(-0.5, 0.5)], [complex(0.5, -0.5), complex(-0.5, -0.5)]]))
     >>> print(divergence_rate)
-    [[0.05 1.  ]
-     [0.05 1.  ]]
+    [[0.95 0.  ]
+     [0.95 0.  ]]
     """ 
     
     convergence_rate = np.empty_like(c, dtype=np.float64)
@@ -120,14 +120,14 @@ def mandelbrot_set_numba(c):
     Returns
     -------
     convergence_rate : np.ndarray
-        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 1.
+        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 0.
 
     Examples
     --------
     >>> divergence_rate = mandelbrot_set_numba(np.array([[complex(0.5, 0.5), complex(-0.5, 0.5)], [complex(0.5, -0.5), complex(-0.5, -0.5)]]))
     >>> print(divergence_rate)
-    [[0.05 1.  ]
-     [0.05 1.  ]]
+    [[0.95 0.  ]
+     [0.95 0.  ]]
     """ 
     
     convergence_rate = np.empty_like(c, dtype="float")
@@ -152,14 +152,14 @@ def mandelbrot_set_numba_parallel(c):
     Returns
     -------
     convergence_rate : np.ndarray
-        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 1.
+        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 0.
 
     Examples
     --------
     >>> divergence_rate = mandelbrot_set_numba_parallel(np.array([[complex(0.5, 0.5), complex(-0.5, 0.5)], [complex(0.5, -0.5), complex(-0.5, -0.5)]]))
     >>> print(divergence_rate)
-    [[0.05 1.  ]
-     [0.05 1.  ]]
+    [[0.95 0.  ]
+     [0.95 0.  ]]
     """ 
     
     convergence_rate = np.empty_like(c, dtype=np.float64)
@@ -188,25 +188,25 @@ def mandelbrot_set_vectorised_numba(c, iterations=100, divergence_limit=2):
     Returns
     -------
     convergence_rate : np.ndarray
-        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 1.
+        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 0.
 
     Examples
     --------
     >>> divergence_rate = mandelbrot_set_vectorised_numba(np.array([[complex(0.5, 0.5), complex(-0.5, 0.5)], [complex(0.5, -0.5), complex(-0.5, -0.5)]]))
     >>> print(divergence_rate)
-    [[0.05 1.  ]
-     [0.05 1.  ]]
+    [[0.95 0.  ]
+     [0.95 0.  ]]
     """ 
     
     z = np.zeros_like(c, dtype=np.complex128)
-    divergence_rate = np.ones_like(c, dtype="float")
+    divergence_rate = np.zeros_like(c, dtype="float")
     mask = np.ones_like(c, dtype="bool")
     for i in range(iterations):
         z = z**2 + c
         z_abs = np.absolute(z)
         diverged = z_abs > divergence_limit
         divergence_rate = np.where(
-            np.logical_and(diverged, mask), (i + 1)/iterations, divergence_rate
+            np.logical_and(diverged, mask), 1 - (i + 1)/iterations, divergence_rate
         )
         mask = np.invert(diverged)
     return divergence_rate
@@ -230,25 +230,54 @@ def mandelbrot_set_vectorised(c, iterations=100, divergence_limit=2):
     Returns
     -------
     convergence_rate : np.ndarray
-        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 1.
+        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 0.
 
     Examples
     --------
     >>> divergence_rate = mandelbrot_set_vectorised(np.array([[complex(0.5, 0.5), complex(-0.5, 0.5)], [complex(0.5, -0.5), complex(-0.5, -0.5)]]))
     >>> print(divergence_rate)
-    [[0.05 1.  ]
-     [0.05 1.  ]]
+    [[0.95 0.  ]
+     [0.95 0.  ]]
     """ 
     z = np.zeros_like(c)
-    divergence_rate = np.ones_like(c, dtype="float")
+    divergence_rate = np.zeros_like(c, dtype="float")
     mask = np.ones_like(c, dtype="bool")
     for i in range(iterations):
         z[mask] = z[mask]**2 + c[mask]
         z_abs = abs(z)
         diverged = z_abs > divergence_limit
-        divergence_rate[diverged & mask] = (i + 1)/iterations
+        divergence_rate[diverged & mask] = 1 - (i + 1)/iterations
         mask = np.invert(diverged)
     return divergence_rate
+
+
+def process_chunk(chunk):
+    return mandelbrot_set_numba(chunk)
+
+from multiprocessing import Pool, cpu_count
+def mandelbrot_set_multiprocessing(c, processes=2):
+    """
+    Determines the divergence rate of mandelbrot equation of a array of complex values.
+
+    Implementation using multiprocessing.
+
+    Parameters
+    ----------
+    c : array
+        An array of complex numbers to test.
+
+    Returns
+    -------
+    convergence_rate : np.ndarray
+        An array of integers representing the rate of divergence for each complex number. Convergence is represented by 0.
+    """ 
+    assert processes <= cpu_count(), "Number of processes cannot exceed number of cores"
+    chunks = np.array_split(c, processes)
+    with Pool(processes=processes) as pool:
+        results = pool.map(process_chunk, chunks)
+    return np.concatenate(results)
+
+
 
 
 if __name__ == "__main__":
